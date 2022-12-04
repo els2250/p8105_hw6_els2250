@@ -147,15 +147,15 @@ homicide_data_analysis %>%
   )
 ```
 
-The plot demonstrates that ALbuquerque, NM, Stockton, CA, and Fresno, CA have the highest odds of solving homicides with male victims compared to female victims. Of note, the 95% confidence intervals for these cities is extremely wide, especially compared to the rest of the data set. Meanwhile, New York, NY, Baton Rouge, LA, and Omaha, NE have the lowest odds of solving homicides with male victims compared to female victims, and they have tighter confidence intervals. 
+The plot demonstrates that Albuquerque, NM, Stockton, CA, and Fresno, CA have the highest odds of solving homicides with male victims compared to female victims. Of note, the 95% confidence intervals for these cities are extremely wide compared to the rest of the data set. Meanwhile, New York, NY, Baton Rouge, LA, and Omaha, NE have the lowest odds of solving homicides with male victims compared to female victims, and they have tighter confidence intervals. 
 
 ## Problem 3
 
 ### Load and Clean Data for Regression Analysis
 
-Four variables (`babysex`, `frace`, `malform`, `mrace`) were converted to factors since they are categorical. `frace` had no "unknown" responses and `mrace` had no "other" responses, therefore, neither of those responses were included in the factor recode. `fincome` was also modified to reflect the appropriate unit reported in the codebook (hundreds). There is no other missing data for any other variables in this data set. The `skimr` function provides a summary of the variables in the data set below.
+Four variables (`babysex`, `frace`, `malform`, `mrace`) were converted to factors since they are categorical. `frace` had no "unknown" responses and `mrace` had no "other" responses, therefore, neither of those responses were included in the factor recode. There are no other missing data for any other variables in this data set. The `skimr` function provides a summary of the variables in the data set below.
 
-```{r}
+```{r, message = FALSE}
 birthweight_df <- 
   read_csv(
     'data/birthweight.csv') %>%  
@@ -172,7 +172,7 @@ skimr::skim(birthweight_df)
 
 ### Regression Model Proposal
 
-We hypothesize that birth weight (grams) is associated with the mother's weight at the time of delivery (pounds).
+We hypothesize that birth weight (grams) is somewhat associated with the mother's weight at the time of delivery (pounds).
 
 ```{r}
 birthweight_df %>% 
@@ -180,7 +180,7 @@ birthweight_df %>%
   geom_point(alpha = 0.5)
 ```
 
-To test this hypothesis, we will use a regression model using birth weight and the baby's length at birth. Below, predictions (x) and residuals (y) are used to illustrate the model.
+To test this hypothesis, we will use a regression model using birth weight and the mother's weight at the time of delivery. Below, predictions (x) and residuals (y) are used to illustrate the model.
 
 ```{r}
 fit_delwt <- lm(bwt ~ delwt, data = birthweight_df)
@@ -195,7 +195,10 @@ birthweight_df %>%
     modelr::add_predictions(birthweight_df, fit_delwt)
   ) %>% 
   ggplot(aes(x = pred, y = resid)) +
-  geom_point()
+  geom_point() +
+  labs(
+    title = "Baby's Birth Weight by Mother's Weight at Delivery"
+  )
 ```
 
 
@@ -203,8 +206,8 @@ birthweight_df %>%
 
 The model above was compared with two models:
 
-* One using length at birth and gestational age as predictors
-* One using head circumference, length, sex, and all interactions as predictors
+* One using length at birth (`blength`) and gestational age (`gaweeks`) as predictors (model = `fit_blength_gaweeks`)
+* One using head circumference (`bhead`), length (`blength`), sex (`bsex`), and all interactions as predictors (model = `fit_bhead_blength_bsex`)
 
 Comparison Models:
 
@@ -217,7 +220,7 @@ fit_bhead_blength_bsex = lm(bwt ~ bhead + blength + babysex + bhead*blength + bh
 
 ### Comparing Regression Models using Cross-Validated Prediction Error
 
-Using cross-validated prediction error, we are able to make comparisons between the three models (`mod_blength`, `mod_blength_gaweeks`, and `mod_bhead_blength_bsex`). 
+Using cross-validated prediction error, we are able to make comparisons between these three models (`mod_blength`, `mod_blength_gaweeks`, and `mod_bhead_blength_bsex`), as shown below. 
 
 ```{r}
 cv_df <-
@@ -237,7 +240,7 @@ cv_df <-
 
 ### Plot of RMSE Values for Each Model
 
-The plot below demonstrates the distribution of RMSE values for each model. RMSE is a metric that ranges from 0 to infinity, and a lower value represents a "better fitted" model to the data set. 
+The plot below demonstrates the distribution of RMSE values for each model. RMSE is a metric that ranges from 0 to infinity, and a lower value represents a "better fitted" model. 
 
 ```{r}
 cv_df %>% 
@@ -254,7 +257,7 @@ cv_df %>%
   ggplot(aes(x = model, y = rmse)) +
   geom_violin() +
   labs(
-    title = "Root Mean Square Errors Distributions for Fitted Birth Weight Model",
+    title = "Root Mean Square Error Distributions for Each Model",
     x = "Model",
     y = "RMSE"
   ) +
